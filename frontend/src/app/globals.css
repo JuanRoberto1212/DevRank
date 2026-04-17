@@ -1,13 +1,16 @@
 :root {
-  --base-dark: #030712;
-  --base-dark-2: #111827;
-  --surface: #f8fafc;
-  --surface-alt: #e2e8f0;
+  --bg-main: #060b17;
+  --bg-card: #ffffff;
+  --bg-card-soft: #f8fafc;
+  --bg-card-dark: #101a2b;
   --text-main: #0f172a;
-  --text-soft: #475569;
-  --accent: #e11d48;
-  --accent-2: #be123c;
-  --accent-glow: rgba(225, 29, 72, 0.35);
+  --text-soft: #64748b;
+  --text-light: #e2e8f0;
+  --line-soft: rgba(148, 163, 184, 0.25);
+  --accent-red: #e11d48;
+  --accent-red-strong: #be123c;
+  --accent-blue: #2563eb;
+  --shadow-main: 0 26px 56px rgba(2, 6, 23, 0.35);
 }
 
 * {
@@ -24,9 +27,9 @@ body {
 
 body {
   font-family: "Trebuchet MS", "Gill Sans", "Segoe UI", sans-serif;
-  color: #f8fafc;
-  background: radial-gradient(circle at 12% 14%, #3f0d18, transparent 36%),
-    radial-gradient(circle at 80% 0%, #881337, transparent 30%), #020617;
+  color: var(--text-light);
+  background: radial-gradient(circle at 14% 0%, rgba(225, 29, 72, 0.22), transparent 34%),
+    radial-gradient(circle at 84% 8%, rgba(37, 99, 235, 0.16), transparent 28%), var(--bg-main);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -34,55 +37,57 @@ body {
 .page-shell {
   position: relative;
   min-height: 100vh;
-  padding: 28px 18px 44px;
+  padding: 24px 16px 34px;
   overflow-x: clip;
 }
 
 .orb {
   position: absolute;
   border-radius: 999px;
-  filter: blur(55px);
-  z-index: 0;
   pointer-events: none;
+  filter: blur(64px);
+  z-index: 0;
 }
 
 .orb-left {
-  width: 280px;
-  height: 280px;
-  left: -70px;
-  top: 40px;
-  background: var(--accent-glow);
+  width: 320px;
+  height: 320px;
+  left: -110px;
+  top: 36px;
+  background: rgba(225, 29, 72, 0.38);
 }
 
 .orb-right {
-  width: 340px;
-  height: 340px;
+  width: 360px;
+  height: 360px;
   right: -110px;
-  bottom: -20px;
-  background: rgba(15, 23, 42, 0.72);
+  bottom: -80px;
+  background: rgba(59, 130, 246, 0.24);
 }
 
 .dashboard {
   position: relative;
   z-index: 1;
-  width: min(1180px, 100%);
+  width: min(1240px, 100%);
   margin: 0 auto;
 }
 
 .panel {
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  border-radius: 22px;
-  background: linear-gradient(145deg, rgba(248, 250, 252, 0.98), rgba(241, 245, 249, 0.95));
+  border: 1px solid var(--line-soft);
+  border-radius: 24px;
+  background: linear-gradient(146deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.98));
   color: var(--text-main);
-  box-shadow: 0 28px 60px rgba(2, 6, 23, 0.25);
+  box-shadow: var(--shadow-main);
+  backdrop-filter: blur(6px);
 }
 
 .topbar {
+  padding: 22px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 22px 24px;
-  background: linear-gradient(120deg, #111827, #1f2937 48%, #be123c 130%);
+  gap: 18px;
+  background: linear-gradient(110deg, #0b1425 0%, #142033 48%, #7f1d1d 100%);
   color: #f8fafc;
 }
 
@@ -92,50 +97,52 @@ body {
   gap: 14px;
 }
 
+.brand-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid rgba(248, 250, 252, 0.35);
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .brand-wrap h1 {
   font-family: "Bahnschrift", "Franklin Gothic Medium", "Trebuchet MS", sans-serif;
-  font-size: clamp(1.6rem, 3.6vw, 2.2rem);
+  font-size: clamp(1.55rem, 3.6vw, 2.15rem);
+  line-height: 1;
   letter-spacing: 0.02em;
-}
-
-.brand-wrap p {
-  margin-top: 2px;
-  font-size: 0.88rem;
-  color: #e2e8f0;
-}
-
-.brand-symbol {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(140deg, #111827, #ef4444);
-  border: 1px solid rgba(248, 250, 252, 0.28);
-}
-
-.brand-symbol span {
-  width: 18px;
-  height: 18px;
-  border-radius: 6px;
-  border: 2px solid #f8fafc;
-  border-bottom-width: 5px;
 }
 
 .account-wrap {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 0.9rem;
+  justify-content: flex-end;
+  gap: 9px;
+  flex-wrap: wrap;
+  font-size: 0.88rem;
+  min-width: 0;
+}
+
+.account-cargo {
+  border: 1px solid rgba(251, 113, 133, 0.52);
+  border-radius: 999px;
+  color: #fecdd3;
+  padding: 4px 10px;
+  font-size: 0.74rem;
+  letter-spacing: 0.02em;
+}
+
+.account-wrap span {
+  word-break: break-word;
 }
 
 .account-wrap button {
   border: none;
   border-radius: 999px;
+  padding: 8px 14px;
   background: #f43f5e;
   color: #fff;
-  padding: 8px 14px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
 }
 
@@ -146,7 +153,7 @@ body {
 
 .auth-head h2 {
   font-family: "Bahnschrift", "Franklin Gothic Medium", "Trebuchet MS", sans-serif;
-  font-size: 1.5rem;
+  font-size: 1.44rem;
 }
 
 .auth-head p {
@@ -157,21 +164,21 @@ body {
 .auth-toggle {
   margin-top: 16px;
   display: inline-flex;
-  gap: 8px;
-  background: #e2e8f0;
-  border-radius: 12px;
   padding: 4px;
+  border-radius: 12px;
+  background: #e2e8f0;
+  gap: 8px;
 }
 
 .auth-toggle button {
   border: none;
   border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
   background: transparent;
   color: #334155;
-  font-weight: 600;
-  font-size: 0.88rem;
-  padding: 8px 16px;
-  cursor: pointer;
+  font-size: 0.86rem;
+  font-weight: 700;
 }
 
 .auth-toggle button.active {
@@ -181,61 +188,67 @@ body {
 }
 
 .auth-grid {
-  margin-top: 16px;
+  margin-top: 14px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 12px;
 }
 
 .auth-grid label {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  color: var(--text-soft);
-  font-size: 0.88rem;
+  gap: 7px;
+  color: #475569;
+  font-size: 0.84rem;
 }
 
-.auth-grid input {
+.auth-grid input,
+.auth-grid select {
+  width: 100%;
   border: 1px solid #cbd5e1;
   border-radius: 12px;
-  padding: 12px 14px;
-  font-size: 0.95rem;
+  padding: 11px 12px;
+  font-size: 0.9rem;
   color: #0f172a;
+  background: #fff;
   outline: none;
 }
 
-.auth-grid input:focus {
-  border-color: #e11d48;
+.auth-grid input:focus,
+.auth-grid select:focus {
+  border-color: var(--accent-red);
   box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.2);
 }
 
 .primary-cta {
-  margin-top: 16px;
   border: none;
   border-radius: 12px;
-  background: linear-gradient(120deg, #e11d48, #be123c);
+  padding: 12px 18px;
+  background: linear-gradient(122deg, var(--accent-red), var(--accent-red-strong));
   color: #fff;
   font-weight: 700;
-  padding: 12px 18px;
   cursor: pointer;
+  margin-top: 14px;
 }
 
 .primary-cta:disabled {
-  opacity: 0.74;
+  opacity: 0.72;
   cursor: progress;
 }
 
+.error-banner,
+.success-banner {
+  margin-top: 14px;
+  padding: 13px 16px;
+}
+
 .error-banner {
-  margin-top: 16px;
-  padding: 14px 18px;
   border-color: rgba(225, 29, 72, 0.4);
-  background: rgba(190, 24, 93, 0.14);
+  background: rgba(225, 29, 72, 0.14);
   color: #fecdd3;
 }
 
 .success-banner {
-  margin-top: 16px;
-  padding: 14px 18px;
   border-color: rgba(34, 197, 94, 0.4);
   background: rgba(34, 197, 94, 0.14);
   color: #bbf7d0;
@@ -250,8 +263,8 @@ body {
 
 .summary-card {
   grid-row: span 4;
-  padding: 18px;
-  background: linear-gradient(160deg, #111827, #1f2937);
+  padding: 20px;
+  background: linear-gradient(166deg, #0f172a, #1e293b 55%, #be123c 170%);
   color: #f8fafc;
 }
 
@@ -262,7 +275,7 @@ body {
 }
 
 .metric {
-  border-bottom: 1px solid rgba(148, 163, 184, 0.24);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.28);
   padding: 12px 0;
   display: flex;
   flex-direction: column;
@@ -271,21 +284,22 @@ body {
 
 .metric span {
   color: #cbd5e1;
-  font-size: 0.86rem;
+  font-size: 0.84rem;
 }
 
 .metric strong {
-  font-size: 1.7rem;
-  font-family: "Bahnschrift", "Franklin Gothic Medium", "Trebuchet MS", sans-serif;
   color: #fda4af;
+  font-size: 1.7rem;
+  line-height: 1.05;
+  font-family: "Bahnschrift", "Franklin Gothic Medium", "Trebuchet MS", sans-serif;
 }
 
 .comparison-tag {
   margin-top: 16px;
+  border: 1px solid rgba(251, 113, 133, 0.35);
   border-radius: 14px;
   padding: 12px;
-  background: rgba(225, 29, 72, 0.2);
-  border: 1px solid rgba(251, 113, 133, 0.42);
+  background: rgba(225, 29, 72, 0.18);
 }
 
 .comparison-tag p {
@@ -294,40 +308,161 @@ body {
 
 .comparison-tag small {
   color: #fecdd3;
+  display: block;
+  margin-top: 4px;
 }
 
-.chart-card,
-.compare-card {
-  padding: 18px;
+.goal-box {
+  margin-top: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(15, 23, 42, 0.25);
+}
+
+.goal-box h3 {
+  font-size: 0.96rem;
+  margin-bottom: 10px;
+  color: #f8fafc;
+}
+
+.goal-form {
+  display: grid;
+  gap: 8px;
+}
+
+.goal-form input {
+  width: 100%;
+  border: 1px solid rgba(203, 213, 225, 0.38);
+  border-radius: 10px;
+  padding: 9px 10px;
+  background: rgba(15, 23, 42, 0.65);
+  color: #f8fafc;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.goal-form input::placeholder {
+  color: #94a3b8;
+}
+
+.goal-form input:focus {
+  border-color: #f43f5e;
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.22);
+}
+
+.goal-form button {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: linear-gradient(120deg, #fb7185, #e11d48);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.goal-list {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.goal-list li {
+  border: 1px solid rgba(203, 213, 225, 0.3);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(15, 23, 42, 0.58);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.goal-list strong {
+  color: #f8fafc;
+  font-size: 0.9rem;
+}
+
+.goal-list span {
+  display: block;
+  color: #cbd5e1;
+  font-size: 0.77rem;
+  margin-top: 2px;
+}
+
+.goal-list button {
+  border: 1px solid rgba(251, 113, 133, 0.5);
+  border-radius: 9px;
+  padding: 7px 9px;
+  background: rgba(190, 24, 93, 0.18);
+  color: #fecdd3;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.goal-empty {
+  margin-top: 8px;
+  color: #cbd5e1;
+  font-size: 0.8rem;
 }
 
 .right-column {
   grid-column: 2;
 }
 
+.income-form-card,
+.chart-card,
+.compare-card {
+  padding: 20px;
+}
+
+.income-form-card h2,
 .chart-card h2,
 .compare-card h2 {
   font-family: "Bahnschrift", "Franklin Gothic Medium", "Trebuchet MS", sans-serif;
-  font-size: 1.45rem;
-}
-
-.income-form-card {
-  padding: 18px;
-}
-
-.income-form-card h2 {
-  font-family: "Bahnschrift", "Franklin Gothic Medium", "Trebuchet MS", sans-serif;
-  font-size: 1.45rem;
+  font-size: 1.42rem;
 }
 
 .income-form-subtitle {
   margin-top: 4px;
   color: var(--text-soft);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
+}
+
+.income-type-actions {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+}
+
+.income-type-actions button {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  color: #334155;
+  padding: 10px 12px;
+  font-size: 0.83rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.income-type-actions button.active-fixed {
+  border-color: var(--accent-red-strong);
+  color: #fff;
+  background: linear-gradient(120deg, var(--accent-red), var(--accent-red-strong));
+}
+
+.income-type-actions button.active-variable {
+  border-color: #1d4ed8;
+  color: #fff;
+  background: linear-gradient(120deg, #2563eb, #1d4ed8);
 }
 
 .income-grid {
-  margin-top: 14px;
+  margin-top: 12px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
@@ -336,13 +471,14 @@ body {
 .income-grid label {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 6px;
+  font-size: 0.83rem;
   color: #475569;
-  font-size: 0.86rem;
 }
 
 .income-grid input,
 .income-grid select {
+  width: 100%;
   border: 1px solid #cbd5e1;
   border-radius: 10px;
   padding: 10px 12px;
@@ -354,7 +490,7 @@ body {
 
 .income-grid input:focus,
 .income-grid select:focus {
-  border-color: #e11d48;
+  border-color: var(--accent-red);
   box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.2);
 }
 
@@ -367,10 +503,10 @@ body {
 }
 
 .recent-wrap h3 {
-  font-family: "Bahnschrift", "Franklin Gothic Medium", "Trebuchet MS", sans-serif;
-  font-size: 1.08rem;
-  color: #0f172a;
   margin-bottom: 10px;
+  font-size: 1.06rem;
+  color: #0f172a;
+  font-family: "Bahnschrift", "Franklin Gothic Medium", "Trebuchet MS", sans-serif;
 }
 
 .recent-list {
@@ -380,8 +516,8 @@ body {
 }
 
 .recent-list li {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 10px;
   align-items: center;
   border: 1px solid #e2e8f0;
@@ -390,30 +526,51 @@ body {
   background: #fff;
 }
 
+.recent-list li > button {
+  justify-self: end;
+}
+
 .recent-list li div {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.recent-list li div:last-child {
+.recent-list li div:nth-child(2) {
   align-items: flex-end;
 }
 
 .recent-list strong {
-  font-size: 0.9rem;
   color: #0f172a;
+  font-size: 0.9rem;
 }
 
 .recent-list span {
-  font-size: 0.78rem;
   color: #64748b;
+  font-size: 0.77rem;
+}
+
+.delete-income-btn {
+  border: 1px solid #fecdd3;
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #fff1f2;
+  color: #be123c;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  min-width: 86px;
+}
+
+.delete-income-btn:disabled {
+  opacity: 0.7;
+  cursor: progress;
 }
 
 .recent-empty {
   border: 1px dashed #cbd5e1;
   border-radius: 12px;
-  padding: 14px;
+  padding: 13px;
   text-align: center;
   color: #64748b;
 }
@@ -425,24 +582,25 @@ body {
 }
 
 .empty-state {
+  width: 100%;
   height: 100%;
-  display: grid;
-  place-items: center;
   border: 1px dashed #cbd5e1;
   border-radius: 14px;
+  display: grid;
+  place-items: center;
   color: #64748b;
 }
 
 .animate-in {
-  animation: fadeUp 0.52s ease both;
+  animation: fadeUp 0.5s ease both;
 }
 
 .delayed {
-  animation-delay: 0.1s;
+  animation-delay: 0.08s;
 }
 
 .delayed-2 {
-  animation-delay: 0.18s;
+  animation-delay: 0.16s;
 }
 
 .delayed-3 {
@@ -460,7 +618,15 @@ body {
   }
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 1040px) {
+  .panel {
+    border-radius: 20px;
+  }
+
+  .topbar {
+    padding: 18px 20px;
+  }
+
   .content-grid {
     grid-template-columns: 1fr;
   }
@@ -478,26 +644,186 @@ body {
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 780px) {
   .page-shell {
-    padding: 16px 12px 30px;
+    padding: 16px 12px 28px;
+  }
+
+  .panel {
+    border-radius: 18px;
   }
 
   .topbar {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+    padding: 16px;
   }
 
-  .auth-grid {
-    grid-template-columns: 1fr;
+  .brand-wrap {
+    width: 100%;
   }
 
+  .account-wrap {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 8px;
+    font-size: 0.82rem;
+  }
+
+  .account-wrap button {
+    margin-top: 2px;
+  }
+
+  .auth-panel,
+  .income-form-card,
+  .chart-card,
+  .compare-card,
+  .summary-card {
+    padding: 16px;
+  }
+
+  .auth-toggle {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .auth-toggle button {
+    width: 100%;
+  }
+
+  .primary-cta {
+    width: 100%;
+  }
+
+  .auth-grid,
   .income-grid {
     grid-template-columns: 1fr;
   }
 
+  .income-type-actions {
+    flex-direction: column;
+  }
+
+  .income-type-actions button {
+    width: 100%;
+  }
+
+  .metric strong {
+    font-size: 1.48rem;
+  }
+
+  .goal-list li {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .goal-list button {
+    width: 100%;
+  }
+
+  .recent-list li {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .recent-list li div:nth-child(2) {
+    align-items: flex-start;
+  }
+
+  .recent-list li > button {
+    justify-self: stretch;
+    width: 100%;
+  }
+
   .chart-holder {
     height: 250px;
+  }
+
+  .brand-logo {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+@media (max-width: 520px) {
+  .page-shell {
+    padding: 12px 10px 22px;
+  }
+
+  .orb-left,
+  .orb-right {
+    filter: blur(50px);
+  }
+
+  .orb-left {
+    width: 240px;
+    height: 240px;
+    left: -120px;
+  }
+
+  .orb-right {
+    width: 240px;
+    height: 240px;
+    right: -120px;
+    bottom: -100px;
+  }
+
+  .panel {
+    border-radius: 16px;
+  }
+
+  .topbar {
+    padding: 14px;
+  }
+
+  .brand-wrap {
+    gap: 10px;
+  }
+
+  .brand-logo {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+  }
+
+  .brand-wrap h1 {
+    font-size: 1.38rem;
+  }
+
+  .auth-head h2,
+  .summary-card h2,
+  .income-form-card h2,
+  .chart-card h2,
+  .compare-card h2 {
+    font-size: 1.24rem;
+  }
+
+  .comparison-tag {
+    padding: 10px;
+  }
+
+  .comparison-tag small {
+    line-height: 1.35;
+  }
+
+  .goal-form input,
+  .income-grid input,
+  .income-grid select,
+  .auth-grid input,
+  .auth-grid select {
+    font-size: 0.86rem;
+    padding: 9px 10px;
+  }
+
+  .primary-cta,
+  .delete-income-btn,
+  .goal-form button {
+    min-height: 42px;
+  }
+
+  .chart-holder {
+    height: 220px;
   }
 }

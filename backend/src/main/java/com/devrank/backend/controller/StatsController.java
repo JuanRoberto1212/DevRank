@@ -8,7 +8,6 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -29,8 +28,7 @@ public class StatsController {
   }
 
   @GetMapping("/comparacao")
-  public UserComparisonResponse compare(
-      @RequestParam(required = false) String area, Principal principal) {
-    return statsService.compareUserWithAreaAverage(principal.getName(), area);
+  public UserComparisonResponse compare(Principal principal) {
+    return statsService.compareUserWithProfileBenchmark(principal.getName());
   }
 }

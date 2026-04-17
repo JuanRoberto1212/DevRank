@@ -29,6 +29,18 @@ public class User {
   @Column(nullable = false, unique = true, length = 120)
   private String email;
 
+  @Column(unique = true, length = 50)
+  private String username;
+
+  @Column(length = 40)
+  private String area;
+
+  @Column(length = 20)
+  private String nivel;
+
+  @Column(length = 80)
+  private String cargo;
+
   @Column(nullable = false, length = 255)
   private String password;
 }

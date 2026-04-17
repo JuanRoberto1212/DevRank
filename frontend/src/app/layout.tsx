@@ -3,7 +3,12 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Dev Bank | Dashboard",
-  description: "Primeiros graficos de media salarial por area e nivel.",
+  description: "SaaS para organizar ganhos e comparar medias salariais de tecnologia.",
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/apple-icon.png",
+  },
 };
 
 export default function RootLayout({

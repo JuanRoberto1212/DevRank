@@ -1,11 +1,11 @@
 package com.devrank.backend.service;
 
+import com.devrank.backend.domain.DomainCatalog;
 import com.devrank.backend.dto.stats.GroupAverageResponse;
 import com.devrank.backend.dto.stats.UserComparisonResponse;
 import com.devrank.backend.model.Income;
 import com.devrank.backend.model.User;
 import com.devrank.backend.repository.IncomeRepository;
-import com.devrank.backend.repository.projection.GroupAverageProjection;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
@@ -23,48 +23,43 @@ public class StatsService {
   private final CurrentUserService currentUserService;
 
   public List<GroupAverageResponse> getAverageByArea() {
-    return incomeRepository.findGlobalAverageByArea().stream()
-        .map(this::toGroupAverageResponse)
+    return DomainCatalog.AREAS.stream()
+        .map(area -> new GroupAverageResponse(area, DomainCatalog.getAverageBaseByArea(area)))
         .toList();
   }
 
   public List<GroupAverageResponse> getAverageByNivel() {
-    return incomeRepository.findGlobalAverageByNivel().stream()
-        .map(this::toGroupAverageResponse)
+    return DomainCatalog.NIVEIS.stream()
+        .map(nivel -> new GroupAverageResponse(nivel, DomainCatalog.getAverageBaseByNivel(nivel)))
         .toList();
   }
 
-  public UserComparisonResponse compareUserWithAreaAverage(String authenticatedEmail, String area) {
+  public UserComparisonResponse compareUserWithProfileBenchmark(String authenticatedEmail) {
     User user = currentUserService.getByEmail(authenticatedEmail);
-    String areaToCompare = resolveAreaToCompare(user, area);
+    ComparisonProfile profile = resolveComparisonProfile(user);
 
-    Double userAverageValue = incomeRepository.findAverageByUserAndArea(user.getId(), areaToCompare);
-    if (userAverageValue == null) {
-      throw new ResponseStatusException(
-          HttpStatus.BAD_REQUEST, "Usuario nao possui ganhos na area informada.");
-    }
-
-    Double marketAverageValue = incomeRepository.findAverageByArea(areaToCompare);
-    if (marketAverageValue == null) {
-      throw new ResponseStatusException(
-          HttpStatus.BAD_REQUEST, "Nao existem dados de mercado para a area informada.");
-    }
-
-    BigDecimal userAverage = toMoney(userAverageValue);
-    BigDecimal marketAverage = toMoney(marketAverageValue);
-    BigDecimal differencePercent = calculateDifferencePercent(userAverage, marketAverage);
+    BigDecimal userFixedTotal =
+        money(incomeRepository.findSumByUserAndTipo(user.getId(), DomainCatalog.FIXED_INCOME_TYPE));
+    BigDecimal marketAverage = money(DomainCatalog.getBaseByAreaAndNivel(profile.area(), profile.nivel()));
+    BigDecimal differencePercent = calculateDifferencePercent(userFixedTotal, marketAverage);
 
     return new UserComparisonResponse(
-        areaToCompare, userAverage, marketAverage, differencePercent, resolveStatus(differencePercent));
+        profile.area(),
+        profile.nivel(),
+        userFixedTotal,
+        marketAverage,
+        differencePercent,
+        resolveStatus(differencePercent));
   }
 
-  private GroupAverageResponse toGroupAverageResponse(GroupAverageProjection projection) {
-    return new GroupAverageResponse(projection.getGrupo(), toMoney(projection.getMedia()));
-  }
+  private ComparisonProfile resolveComparisonProfile(User user) {
+    String userArea = normalizeLower(user.getArea());
+    String userNivel = normalizeLower(user.getNivel());
 
-  private String resolveAreaToCompare(User user, String area) {
-    if (area != null && !area.isBlank()) {
-      return normalizeLower(area);
+    boolean validUserArea = DomainCatalog.isValidArea(userArea);
+    boolean validUserNivel = DomainCatalog.isValidNivel(userNivel);
+    if (validUserArea && validUserNivel) {
+      return new ComparisonProfile(userArea, userNivel);
     }
 
     Income latestIncome =
@@ -73,17 +68,25 @@ public class StatsService {
             .orElseThrow(
                 () ->
                     new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST, "Usuario nao possui ganhos para comparacao."));
+                        HttpStatus.BAD_REQUEST,
+                        "Usuario sem perfil valido e sem renda para definir area/nivel de comparacao."));
 
-    return latestIncome.getArea();
+    String incomeArea = normalizeLower(latestIncome.getArea());
+    String incomeNivel = normalizeLower(latestIncome.getNivel());
+    if (!DomainCatalog.isValidArea(incomeArea) || !DomainCatalog.isValidNivel(incomeNivel)) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Area ou nivel da renda mais recente nao sao validos.");
+    }
+
+    return new ComparisonProfile(incomeArea, incomeNivel);
   }
 
-  private BigDecimal calculateDifferencePercent(BigDecimal userAverage, BigDecimal marketAverage) {
+  private BigDecimal calculateDifferencePercent(BigDecimal userValue, BigDecimal marketAverage) {
     if (marketAverage.compareTo(BigDecimal.ZERO) == 0) {
       return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
     }
 
-    return userAverage
+    return userValue
         .subtract(marketAverage)
         .multiply(BigDecimal.valueOf(100))
         .divide(marketAverage, 2, RoundingMode.HALF_UP);
@@ -100,11 +103,16 @@ public class StatsService {
     return "NA_MEDIA";
   }
 
-  private BigDecimal toMoney(Double value) {
-    return BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP);
+  private BigDecimal money(BigDecimal value) {
+    return value.setScale(2, RoundingMode.HALF_UP);
   }
 
   private String normalizeLower(String value) {
+    if (value == null) {
+      return null;
+    }
     return value.trim().toLowerCase(Locale.ROOT);
   }
+
+  private record ComparisonProfile(String area, String nivel) {}
 }

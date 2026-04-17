@@ -1,5 +1,6 @@
 package com.devrank.backend.service;
 
+import com.devrank.backend.domain.DomainCatalog;
 import com.devrank.backend.dto.income.IncomeRequest;
 import com.devrank.backend.dto.income.IncomeResponse;
 import com.devrank.backend.model.Income;
@@ -65,12 +66,45 @@ public class IncomeService {
   }
 
   private void applyRequestData(Income income, IncomeRequest request) {
+    String area = normalizeLower(request.area());
+    String nivel = normalizeLower(request.nivel());
+    String tipo = normalizeUpper(request.tipo());
+    String regiao = normalizeUpper(request.regiao());
+
+    validateCatalogValues(area, nivel, tipo, regiao);
+
     income.setValor(scaleMoney(request.valor()));
-    income.setTipo(normalizeUpper(request.tipo()));
-    income.setArea(normalizeLower(request.area()));
-    income.setNivel(normalizeLower(request.nivel()));
-    income.setRegiao(normalizeLower(request.regiao()));
+    income.setTipo(tipo);
+    income.setArea(area);
+    income.setNivel(nivel);
+    income.setRegiao(regiao);
     income.setData(request.data());
+  }
+
+  private void validateCatalogValues(String area, String nivel, String tipo, String regiao) {
+    if (!DomainCatalog.isValidArea(area)) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST,
+          "Area invalida. Opcoes: " + String.join(", ", DomainCatalog.AREAS));
+    }
+
+    if (!DomainCatalog.isValidNivel(nivel)) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST,
+          "Nivel invalido. Opcoes: " + String.join(", ", DomainCatalog.NIVEIS));
+    }
+
+    if (!DomainCatalog.isValidTipoRenda(tipo)) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST,
+          "Tipo de renda invalido. Opcoes: " + String.join(", ", DomainCatalog.TIPOS_RENDA));
+    }
+
+    if (!DomainCatalog.isValidRegiao(regiao)) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST,
+          "Regiao invalida. Opcoes: " + String.join(", ", DomainCatalog.REGIOES));
+    }
   }
 
   private IncomeResponse toResponse(Income income) {

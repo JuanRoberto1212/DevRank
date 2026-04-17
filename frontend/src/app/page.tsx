@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   ArcElement,
@@ -9,6 +9,7 @@ import {
   LinearScale,
   Tooltip,
 } from "chart.js";
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bar, Doughnut } from "react-chartjs-2";
 
@@ -33,6 +34,7 @@ type GroupAverage = {
 
 type Comparison = {
   area: string;
+  nivel: string;
   mediaUsuario: number;
   mediaMercado: number;
   diferencaPercentual: number;
@@ -43,6 +45,10 @@ type AuthResponse = {
   token: string;
   userId: string;
   email: string;
+  username?: string;
+  cargo?: string;
+  area?: string;
+  nivel?: string;
 };
 
 type DashboardData = {
@@ -54,23 +60,44 @@ type DashboardData = {
 
 type IncomeFormState = {
   valor: string;
-  tipo: string;
+  tipo: "FIXA" | "VARIAVEL";
   area: string;
   nivel: string;
   regiao: string;
   data: string;
 };
 
+type Goal = {
+  id: string;
+  nome: string;
+  valorObjetivo: number;
+  guardaPorMes: number;
+};
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 const TOKEN_KEY = "devbank_token";
 const EMAIL_KEY = "devbank_email";
+const USERNAME_KEY = "devbank_username";
+const CARGO_KEY = "devbank_cargo";
+const GOALS_KEY = "devbank_goals";
+
+const AREA_OPTIONS = ["frontend", "backend", "data", "cloud"] as const;
+const NIVEL_OPTIONS = ["estagiario", "junior", "pleno", "senior"] as const;
+const REGIAO_OPTIONS = ["SP", "RJ", "MG", "ES", "PR", "SC", "RS", "DF", "GO", "BA", "PE", "CE"] as const;
+
 const defaultFormState: IncomeFormState = {
   valor: "",
-  tipo: "CLT",
+  tipo: "FIXA",
   area: "backend",
   nivel: "junior",
-  regiao: "sudeste",
+  regiao: "SP",
   data: new Date().toISOString().slice(0, 10),
+};
+
+const defaultGoalForm = {
+  nome: "",
+  valorObjetivo: "",
+  guardaPorMes: "",
 };
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
@@ -115,25 +142,59 @@ function getComparisonLabel(status?: string): string {
   return "Na media";
 }
 
+function levelBarColor(level: string): string {
+  if (level === "junior") return "#22c55e";
+  if (level === "pleno") return "#38bdf8";
+  if (level === "senior") return "#fbbf24";
+  return "#f97316";
+}
+
 export default function Home() {
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [registerUsername, setRegisterUsername] = useState("");
+  const [registerArea, setRegisterArea] = useState<(typeof AREA_OPTIONS)[number]>("backend");
+  const [registerNivel, setRegisterNivel] = useState<(typeof NIVEL_OPTIONS)[number]>("junior");
+
   const [token, setToken] = useState("");
   const [userEmail, setUserEmail] = useState("");
+  const [userName, setUserName] = useState("");
+  const [userCargo, setUserCargo] = useState("");
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [isDashboardLoading, setIsDashboardLoading] = useState(false);
   const [isIncomeSaving, setIsIncomeSaving] = useState(false);
+  const [deletingIncomeId, setDeletingIncomeId] = useState<string | null>(null);
   const [incomeForm, setIncomeForm] = useState<IncomeFormState>(defaultFormState);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [goalForm, setGoalForm] = useState(defaultGoalForm);
+
+  const cargoPreview = `${toTitleCase(registerArea)} ${toTitleCase(registerNivel)}`;
 
   useEffect(() => {
     const storedToken = window.localStorage.getItem(TOKEN_KEY);
     const storedEmail = window.localStorage.getItem(EMAIL_KEY);
+    const storedUsername = window.localStorage.getItem(USERNAME_KEY);
+    const storedCargo = window.localStorage.getItem(CARGO_KEY);
+    const storedGoals = window.localStorage.getItem(GOALS_KEY);
     if (storedToken) setToken(storedToken);
     if (storedEmail) setUserEmail(storedEmail);
+    if (storedUsername) setUserName(storedUsername);
+    if (storedCargo) setUserCargo(storedCargo);
+    if (storedGoals) {
+      try {
+        const parsedGoals = JSON.parse(storedGoals) as Goal[];
+        if (Array.isArray(parsedGoals)) {
+          setGoals(parsedGoals);
+        }
+      } catch {
+        window.localStorage.removeItem(GOALS_KEY);
+      }
+    }
   }, []);
 
   const loadDashboard = useCallback(async (authToken: string) => {
@@ -167,6 +228,10 @@ export default function Home() {
 
     void loadDashboard(token);
   }, [token, loadDashboard]);
+
+  useEffect(() => {
+    window.localStorage.setItem(GOALS_KEY, JSON.stringify(goals));
+  }, [goals]);
 
   const resume = useMemo(() => {
     if (!dashboardData) {
@@ -214,8 +279,10 @@ export default function Home() {
   }, [dashboardData]);
 
   const levelChartData = useMemo(() => {
-    const labels = dashboardData?.byLevel.map((item) => toTitleCase(item.grupo)) ?? [];
+    const labelsRaw = dashboardData?.byLevel.map((item) => item.grupo) ?? [];
+    const labels = labelsRaw.map((item) => toTitleCase(item));
     const values = dashboardData?.byLevel.map((item) => Number(item.media)) ?? [];
+    const colors = labelsRaw.map((level) => levelBarColor(level));
 
     return {
       labels,
@@ -224,9 +291,8 @@ export default function Home() {
           label: "Media por nivel (R$)",
           data: values,
           borderRadius: 10,
-          borderWidth: 1,
-          backgroundColor: ["#0f172a", "#334155", "#64748b", "#94a3b8"],
-          borderColor: "#fda4af",
+          borderWidth: 0,
+          backgroundColor: colors,
         },
       ],
     };
@@ -314,20 +380,55 @@ export default function Home() {
       return;
     }
 
+    if (authMode === "register" && !registerUsername.trim()) {
+      setError("Informe nome de usuario para cadastro.");
+      return;
+    }
+
     setIsAuthLoading(true);
     setError("");
     setSuccess("");
     try {
       const endpoint = authMode === "login" ? "/auth/login" : "/auth/register";
+      const payload =
+        authMode === "register"
+          ? {
+              username: registerUsername,
+              area: registerArea,
+              nivel: registerNivel,
+              email,
+              password,
+            }
+          : { email, password };
+
       const response = await apiRequest<AuthResponse>(endpoint, {
         method: "POST",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(payload),
       });
+
+      const resolvedUsername =
+        response.username ??
+        (authMode === "register"
+          ? registerUsername.trim().toLowerCase()
+          : response.email.split("@")[0]);
+      const resolvedCargo =
+        response.cargo ??
+        (response.area && response.nivel ? `${toTitleCase(response.area)} ${toTitleCase(response.nivel)}` : "");
 
       setToken(response.token);
       setUserEmail(response.email);
+      setUserName(resolvedUsername);
+      setUserCargo(resolvedCargo);
+
       window.localStorage.setItem(TOKEN_KEY, response.token);
       window.localStorage.setItem(EMAIL_KEY, response.email);
+      window.localStorage.setItem(USERNAME_KEY, resolvedUsername);
+      if (resolvedCargo) {
+        window.localStorage.setItem(CARGO_KEY, resolvedCargo);
+      } else {
+        window.localStorage.removeItem(CARGO_KEY);
+      }
+
       setPassword("");
       setSuccess("Autenticacao concluida.");
     } catch (authError) {
@@ -346,14 +447,7 @@ export default function Home() {
   const handleIncomeCreate = async () => {
     if (!token) return;
 
-    if (
-      !incomeForm.valor ||
-      !incomeForm.tipo ||
-      !incomeForm.area ||
-      !incomeForm.nivel ||
-      !incomeForm.regiao ||
-      !incomeForm.data
-    ) {
+    if (!incomeForm.valor || !incomeForm.area || !incomeForm.nivel || !incomeForm.regiao || !incomeForm.data) {
       setError("Preencha todos os campos da renda.");
       return;
     }
@@ -384,6 +478,10 @@ export default function Home() {
 
       setIncomeForm((previous) => ({
         ...defaultFormState,
+        tipo: previous.tipo,
+        area: previous.area,
+        nivel: previous.nivel,
+        regiao: previous.regiao,
         data: previous.data,
       }));
       setSuccess("Renda adicionada com sucesso.");
@@ -397,14 +495,88 @@ export default function Home() {
     }
   };
 
+  const handleIncomeDelete = async (incomeId: string) => {
+    if (!token) return;
+
+    setDeletingIncomeId(incomeId);
+    setError("");
+    setSuccess("");
+    try {
+      await apiRequest<void>(`/income/${incomeId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setSuccess("Renda excluida com sucesso.");
+      await loadDashboard(token);
+    } catch (deleteError) {
+      const message = deleteError instanceof Error ? deleteError.message : "Nao foi possivel excluir a renda.";
+      setError(message);
+    } finally {
+      setDeletingIncomeId(null);
+    }
+  };
+
+  const handleGoalFieldChange = (field: keyof typeof defaultGoalForm, value: string) => {
+    setGoalForm((previous) => ({ ...previous, [field]: value }));
+  };
+
+  const handleGoalCreate = () => {
+    const nome = goalForm.nome.trim();
+    const valorObjetivo = Number(goalForm.valorObjetivo);
+    const guardaPorMes = Number(goalForm.guardaPorMes);
+
+    if (!nome || Number.isNaN(valorObjetivo) || Number.isNaN(guardaPorMes)) {
+      setError("Preencha os campos da meta corretamente.");
+      return;
+    }
+
+    if (valorObjetivo <= 0 || guardaPorMes <= 0) {
+      setError("Meta e valor guardado por mes devem ser maiores que zero.");
+      return;
+    }
+
+    setGoals((previous) => [
+      ...previous,
+      {
+        id: crypto.randomUUID(),
+        nome,
+        valorObjetivo,
+        guardaPorMes,
+      },
+    ]);
+
+    setGoalForm(defaultGoalForm);
+    setError("");
+    setSuccess("Meta financeira adicionada.");
+  };
+
+  const handleGoalDelete = (goalId: string) => {
+    setGoals((previous) => previous.filter((goal) => goal.id !== goalId));
+  };
+
+  const getGoalForecast = (goal: Goal) => {
+    const monthsNeeded = Math.ceil(goal.valorObjetivo / goal.guardaPorMes);
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + monthsNeeded);
+    return {
+      monthsNeeded,
+      endDateLabel: endDate.toLocaleDateString("pt-BR", { month: "long", year: "numeric" }),
+    };
+  };
+
   const handleLogout = () => {
     setToken("");
     setUserEmail("");
+    setUserName("");
+    setUserCargo("");
     setSuccess("");
     setError("");
     setDashboardData(null);
     window.localStorage.removeItem(TOKEN_KEY);
     window.localStorage.removeItem(EMAIL_KEY);
+    window.localStorage.removeItem(USERNAME_KEY);
+    window.localStorage.removeItem(CARGO_KEY);
   };
 
   return (
@@ -415,19 +587,17 @@ export default function Home() {
       <main className="dashboard">
         <header className="topbar panel animate-in">
           <div className="brand-wrap">
-            <div className="brand-symbol" aria-hidden>
-              <span />
-            </div>
+            <Image src="/logo.png" alt="Dev Bank Logo" width={56} height={56} className="brand-logo" priority />
             <div>
               <h1>Dev Bank</h1>
-              <p>Dashboard inicial de medias salariais</p>
             </div>
           </div>
 
           <div className="account-wrap">
             {token ? (
               <>
-                <span>{userEmail}</span>
+                <span>{userName ? `@${userName}` : userEmail}</span>
+                {userCargo && <span className="account-cargo">{userCargo}</span>}
                 <button type="button" onClick={handleLogout}>
                   Sair
                 </button>
@@ -463,6 +633,57 @@ export default function Home() {
             </div>
 
             <div className="auth-grid">
+              {authMode === "register" && (
+                <>
+                  <label>
+                    Nome de usuario
+                    <input
+                      type="text"
+                      placeholder="ex: devjoao"
+                      value={registerUsername}
+                      onChange={(event) => setRegisterUsername(event.target.value)}
+                    />
+                  </label>
+
+                  <label>
+                    Area principal
+                    <select
+                      value={registerArea}
+                      onChange={(event) =>
+                        setRegisterArea(event.target.value as (typeof AREA_OPTIONS)[number])
+                      }
+                    >
+                      {AREA_OPTIONS.map((areaOption) => (
+                        <option key={areaOption} value={areaOption}>
+                          {toTitleCase(areaOption)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label>
+                    Nivel principal
+                    <select
+                      value={registerNivel}
+                      onChange={(event) =>
+                        setRegisterNivel(event.target.value as (typeof NIVEL_OPTIONS)[number])
+                      }
+                    >
+                      {NIVEL_OPTIONS.map((nivelOption) => (
+                        <option key={nivelOption} value={nivelOption}>
+                          {toTitleCase(nivelOption)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label>
+                    Cargo (fixo)
+                    <input type="text" value={cargoPreview} readOnly />
+                  </label>
+                </>
+              )}
+
               <label>
                 E-mail
                 <input
@@ -517,13 +738,73 @@ export default function Home() {
                   <>
                     <p>{getComparisonLabel(dashboardData.comparison.situacao)}</p>
                     <small>
+                      Seus fixos: {currencyFormatter.format(dashboardData.comparison.mediaUsuario)} | Referencia:{" "}
+                      {currencyFormatter.format(dashboardData.comparison.mediaMercado)}
+                    </small>
+                    <small>
                       {dashboardData.comparison.diferencaPercentual > 0 ? "+" : ""}
-                      {dashboardData.comparison.diferencaPercentual.toFixed(2)}% vs media em{" "}
-                      {toTitleCase(dashboardData.comparison.area)}
+                      {dashboardData.comparison.diferencaPercentual.toFixed(2)}% vs referencia em{" "}
+                      {toTitleCase(dashboardData.comparison.area)} ({toTitleCase(dashboardData.comparison.nivel)})
                     </small>
                   </>
                 ) : (
                   <small>Adicione rendas para liberar comparacao.</small>
+                )}
+              </div>
+
+              <div className="goal-box">
+                <h3>Metas financeiras</h3>
+                <div className="goal-form">
+                  <input
+                    type="text"
+                    placeholder="Nome da meta (ex: Moto)"
+                    value={goalForm.nome}
+                    onChange={(event) => handleGoalFieldChange("nome", event.target.value)}
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Valor da meta (R$)"
+                    value={goalForm.valorObjetivo}
+                    onChange={(event) => handleGoalFieldChange("valorObjetivo", event.target.value)}
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Quanto guarda por mes (R$)"
+                    value={goalForm.guardaPorMes}
+                    onChange={(event) => handleGoalFieldChange("guardaPorMes", event.target.value)}
+                  />
+                  <button type="button" onClick={handleGoalCreate}>
+                    Salvar meta
+                  </button>
+                </div>
+
+                {goals.length > 0 ? (
+                  <ul className="goal-list">
+                    {goals.map((goal) => {
+                      const forecast = getGoalForecast(goal);
+                      return (
+                        <li key={goal.id}>
+                          <div>
+                            <strong>{goal.nome}</strong>
+                            <span>Meta: {currencyFormatter.format(goal.valorObjetivo)}</span>
+                            <span>Guardando: {currencyFormatter.format(goal.guardaPorMes)}/mes</span>
+                            <span>
+                              Tempo estimado: {forecast.monthsNeeded} meses ({forecast.endDateLabel})
+                            </span>
+                          </div>
+                          <button type="button" onClick={() => handleGoalDelete(goal.id)}>
+                            Remover
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p className="goal-empty">Nenhuma meta cadastrada ainda.</p>
                 )}
               </div>
             </article>
@@ -533,6 +814,23 @@ export default function Home() {
               <p className="income-form-subtitle">
                 Cadastre seus ganhos aqui para atualizar os graficos automaticamente.
               </p>
+
+              <div className="income-type-actions">
+                <button
+                  type="button"
+                  className={incomeForm.tipo === "FIXA" ? "active-fixed" : ""}
+                  onClick={() => handleIncomeFieldChange("tipo", "FIXA")}
+                >
+                  Renda fixa mensal
+                </button>
+                <button
+                  type="button"
+                  className={incomeForm.tipo === "VARIAVEL" ? "active-variable" : ""}
+                  onClick={() => handleIncomeFieldChange("tipo", "VARIAVEL")}
+                >
+                  Renda variavel
+                </button>
+              </div>
 
               <div className="income-grid">
                 <label>
@@ -548,24 +846,17 @@ export default function Home() {
                 </label>
 
                 <label>
-                  Tipo
-                  <select
-                    value={incomeForm.tipo}
-                    onChange={(event) => handleIncomeFieldChange("tipo", event.target.value)}
-                  >
-                    <option value="CLT">CLT</option>
-                    <option value="PJ">PJ</option>
-                    <option value="FREELANCE">Freelance</option>
-                  </select>
-                </label>
-
-                <label>
                   Area
-                  <input
-                    type="text"
+                  <select
                     value={incomeForm.area}
                     onChange={(event) => handleIncomeFieldChange("area", event.target.value)}
-                  />
+                  >
+                    {AREA_OPTIONS.map((areaOption) => (
+                      <option key={areaOption} value={areaOption}>
+                        {toTitleCase(areaOption)}
+                      </option>
+                    ))}
+                  </select>
                 </label>
 
                 <label>
@@ -574,19 +865,26 @@ export default function Home() {
                     value={incomeForm.nivel}
                     onChange={(event) => handleIncomeFieldChange("nivel", event.target.value)}
                   >
-                    <option value="junior">Junior</option>
-                    <option value="pleno">Pleno</option>
-                    <option value="senior">Senior</option>
+                    {NIVEL_OPTIONS.map((nivelOption) => (
+                      <option key={nivelOption} value={nivelOption}>
+                        {toTitleCase(nivelOption)}
+                      </option>
+                    ))}
                   </select>
                 </label>
 
                 <label>
-                  Regiao
-                  <input
-                    type="text"
+                  Regiao (UF)
+                  <select
                     value={incomeForm.regiao}
                     onChange={(event) => handleIncomeFieldChange("regiao", event.target.value)}
-                  />
+                  >
+                    {REGIAO_OPTIONS.map((regiaoOption) => (
+                      <option key={regiaoOption} value={regiaoOption}>
+                        {regiaoOption}
+                      </option>
+                    ))}
+                  </select>
                 </label>
 
                 <label>
@@ -617,13 +915,21 @@ export default function Home() {
                         <div>
                           <strong>{toTitleCase(income.area)}</strong>
                           <span>
-                            {toTitleCase(income.nivel)} • {income.tipo}
+                            {toTitleCase(income.nivel)} - {income.tipo}
                           </span>
                         </div>
                         <div>
                           <strong>{currencyFormatter.format(income.valor)}</strong>
                           <span>{new Date(income.data).toLocaleDateString("pt-BR")}</span>
                         </div>
+                        <button
+                          type="button"
+                          className="delete-income-btn"
+                          onClick={() => handleIncomeDelete(income.id)}
+                          disabled={deletingIncomeId === income.id}
+                        >
+                          {deletingIncomeId === income.id ? "Excluindo..." : "Excluir"}
+                        </button>
                       </li>
                     ))}
                   </ul>
@@ -677,3 +983,4 @@ export default function Home() {
     </div>
   );
 }
+

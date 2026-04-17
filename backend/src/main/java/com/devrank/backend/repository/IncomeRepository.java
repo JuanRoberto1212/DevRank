@@ -2,6 +2,7 @@ package com.devrank.backend.repository;
 
 import com.devrank.backend.model.Income;
 import com.devrank.backend.repository.projection.GroupAverageProjection;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -16,6 +17,9 @@ public interface IncomeRepository extends JpaRepository<Income, UUID> {
   Optional<Income> findByIdAndUser_Id(UUID id, UUID userId);
 
   Optional<Income> findTopByUser_IdOrderByDataDescIdDesc(UUID userId);
+
+  @Query("select coalesce(sum(i.valor), 0) from Income i where i.user.id = :userId and i.tipo = :tipo")
+  BigDecimal findSumByUserAndTipo(@Param("userId") UUID userId, @Param("tipo") String tipo);
 
   @Query("select avg(i.valor) from Income i where i.user.id = :userId and i.area = :area")
   Double findAverageByUserAndArea(@Param("userId") UUID userId, @Param("area") String area);
