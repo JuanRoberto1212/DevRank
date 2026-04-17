@@ -920,7 +920,7 @@ export default function Home() {
                         </div>
                         <div>
                           <strong>{currencyFormatter.format(income.valor)}</strong>
-                          <span>{new Date(income.data).toLocaleDateString("pt-BR")}</span>
+                          <span>{new Date(income.data + "T12:00:00").toLocaleDateString("pt-BR")}</span>
                         </div>
                         <button
                           type="button"
