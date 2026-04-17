@@ -250,7 +250,7 @@ export default function Home() {
 
     const monthlyTotal = dashboardData.incomes
       .filter((item) => {
-        const date = new Date(item.data);
+        const date = new Date(item.data + 'T12:00:00');
         return date.getMonth() === month && date.getFullYear() === year;
       })
       .reduce((sum, item) => sum + Number(item.valor), 0);
