@@ -4,15 +4,15 @@ services:
     container_name: devrank-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-devrank}
-      POSTGRES_USER: ${POSTGRES_USER:-devrank}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devrank123}
+      POSTGRES_DB: ${DB_NAME:-devrank}
+      POSTGRES_USER: ${DB_USER:-devrank}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-devrank123}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-devrank} -d ${POSTGRES_DB:-devrank}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-devrank} -d ${DB_NAME:-devrank}"]
       interval: 10s
       timeout: 5s
       retries: 5

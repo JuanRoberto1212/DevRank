@@ -4,9 +4,12 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -50,7 +53,23 @@ public class JwtService {
   }
 
   private SecretKey getSigningKey() {
-    byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
-    return Keys.hmacShaKeyFor(keyBytes);
+    return Keys.hmacShaKeyFor(resolveKeyBytes());
+  }
+
+  private byte[] resolveKeyBytes() {
+    try {
+      return Decoders.BASE64.decode(jwtSecret);
+    } catch (RuntimeException ex) {
+      return sha256(jwtSecret);
+    }
+  }
+
+  private byte[] sha256(String value) {
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      return digest.digest(value.getBytes(StandardCharsets.UTF_8));
+    } catch (NoSuchAlgorithmException ex) {
+      throw new IllegalStateException("Nao foi possivel preparar a chave do JWT.", ex);
+    }
   }
 }

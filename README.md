@@ -1,196 +1,170 @@
-# DevRank - Gerenciamento de Rendas para Desenvolvedores
+# DevRank
 
-![UI do DevRank](./image.png)
+![Tela do DevRank](./image.png)
 
-DevRank é uma aplicação web para gerenciamento e análise de rendas de desenvolvedores. Permite cadastrar ganhos, visualizar estatísticas salariais por área, nível e região, e comparar salários com outros usuários.
+DevRank e um SaaS MVP para organizar renda pessoal de profissionais de tecnologia no Brasil. O foco atual e cadastrar ganhos, comparar com referencias de mercado por area e nivel, acompanhar graficos iniciais e manter metas financeiras por usuario.
 
-O projeto foi pensado para rodar localmente ou em containers, com foco em análise de dados salariais no mercado de TI brasileiro.
+Nao existe integracao com apps externos de finanças e nem validacao de renda em serviços de terceiros. As referencias globais servem como apoio para analise, nao como regra obrigatoria.
 
-## Sumário
+## Stack
 
-1. [Funcionalidades](#funcionalidades)
-2. [Arquitetura](#arquitetura)
-3. [Requisitos](#requisitos)
-4. [Instalação](#instalação)
-5. [Configuração](#configuração)
-6. [Como rodar](#como-rodar)
-7. [Exemplos de Uso](#exemplos-de-uso)
-8. [Troubleshooting](#troubleshooting)
-9. [Observações Importantes](#observações-importantes)
+| Camada | Tecnologias |
+| --- | --- |
+| Backend | Java 21, Spring Boot 3.5, Spring Security, JWT, Spring Data JPA |
+| Frontend | Next.js 16, React 19, Chart.js |
+| Banco | PostgreSQL via Docker |
+| Deploy | Backend em Render ou Railway, frontend em Vercel |
 
-## Funcionalidades
+## Funcionalidades do MVP
 
-### Cadastro e Gerenciamento
+- Cadastro e login com JWT.
+- Cadastro, edicao e exclusao de ganhos.
+- Dashboard pessoal com total mensal, total acumulado, media e historico.
+- Graficos de media salarial por area, nivel e tipo.
+- Comparacao entre a renda do usuario e a referencia de mercado.
+- Metas financeiras salvas por usuario no navegador.
+- Cargo sugerido no cadastro com base em area e nivel.
 
-- Cadastro de ganhos com detalhes: valor, tipo, área, nível, região e data.
-- Edição e exclusão de lançamentos.
-- Validação de dados com catálogo pré-definido (áreas, níveis, tipos de renda).
+## Regras atuais do produto
 
-### Dashboard e Análises
+- Areas fixas: frontend, backend, data e cloud.
+- Niveis fixos: estagiario, junior, pleno e senior.
+- Regioes limitadas aos principais estados do Brasil.
+- O usuario informa a propria renda; nao ha integracao bancaria ou importacao automatica.
+- As metas ficam isoladas por conta no frontend, usando `localStorage` por usuario.
 
-- Resumo pessoal: ganhos no mês, total acumulado, média dos lançamentos.
-- Estatísticas salariais: médias por área, nível e região.
-- Comparação salarial com outros usuários.
-- Gráficos interativos com Chart.js.
-
-### Autenticação e Segurança
-
-- Sistema de login e registro com JWT.
-- Controle de acesso por usuário autenticado.
-
-### Persistência
-
-- Banco de dados PostgreSQL para armazenar usuários e ganhos.
-- Consultas otimizadas com Spring Data JPA.
-
-## Arquitetura
+## Estrutura do projeto
 
 ```text
 DevRank/
-  backend/                     # Servidor Spring Boot
+  backend/
     src/main/java/com/devrank/backend/
-      controller/              # Endpoints REST (Auth, Income, Stats)
-      service/                 # Lógica de negócio (AuthService, IncomeService, etc.)
-      model/                   # Entidades JPA (User, Income)
-      repository/              # Repositórios Spring Data
-      security/                # Configuração JWT e segurança
-      dto/                     # Objetos de transferência (Request/Response)
+      controller/
+      service/
+      repository/
+      model/
+      security/
+      dto/
     src/main/resources/
-      application.properties   # Configurações do app
-  frontend/                    # Cliente Next.js
-    src/app/                   # Páginas e componentes React
-      page.tsx                 # Dashboard principal
-      layout.tsx               # Layout global
-    src/components/            # Componentes reutilizáveis
-  docker-compose.yml           # Orquestração de containers
-  backend/pom.xml              # Dependências Maven
-  frontend/package.json        # Dependências Node.js
+      application.properties
+  frontend/
+    src/app/
+      page.tsx
+      layout.tsx
+      globals.css
+    public/
+  docker-compose.yml
+  .env.example
+  frontend/.env.example
+  image.png
 ```
 
 ## Requisitos
 
-- Windows/Linux/macOS (compatível com Docker).
-- Docker e Docker Compose (para execução completa).
-- Node.js 18+ e Java 17+ (para desenvolvimento local).
-- PostgreSQL (via Docker ou local).
-- Navegador web moderno.
+- Docker Desktop ou Docker + Docker Compose.
+- Java 21.
+- Node.js 18 ou superior.
+- Git.
 
-## Instalação
+## Configuracao de ambiente
 
-### 1) Clonar o repositório
+### 1. Variaveis da raiz do projeto
+
+Copie o arquivo de exemplo da raiz para um `.env` local:
+
+```powershell
+Copy-Item .env.example .env -Force
+```
+
+Ajuste os valores conforme seu ambiente:
+
+- `DB_HOST`
+- `DB_PORT`
+- `DB_NAME`
+- `DB_USER`
+- `DB_PASSWORD`
+- `JWT_SECRET`
+- `JWT_EXPIRATION_MS`
+
+### 2. Variavel do frontend
+
+Se quiser mudar a URL da API, copie o exemplo do frontend para `.env.local`:
+
+```powershell
+Copy-Item frontend\.env.example frontend\.env.local -Force
+```
+
+O valor padrao e:
 
 ```bash
-git clone https://github.com/JuanRoberto1212/DevRank
-cd devrank
+NEXT_PUBLIC_API_URL=http://localhost:8080
 ```
-
-### 2) Instalar dependências
-
-Para desenvolvimento local:
-
-- **Backend**: Navegue para `backend/` e execute:
-  ```bash
-  ./mvnw dependency:resolve
-  ```
-
-- **Frontend**: Navegue para `frontend/` e execute:
-  ```bash
-  Copy-Item .env.example .env.local -Force
-  npm.cmd install
-  npm.cmd run dev
-  ```
-
-Para execução com Docker, as dependências são resolvidas automaticamente.
-
-## Configuração
-
-### 1) Arquivo de ambiente (opcional para desenvolvimento)
-
-Para o backend, edite `backend/src/main/resources/application.properties`:
-
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/devrank
-spring.datasource.username=devrank
-spring.datasource.password=devrank123
-spring.jpa.hibernate.ddl-auto=update
-app.jwt.secret=sua-chave-jwt-aqui
-```
-
-Para o frontend, crie um `.env.local` se necessário (ex.: para APIs externas, mas não há no projeto atual).
-
-### 2) Banco de dados
-
-O Docker Compose configura o PostgreSQL automaticamente. Para local:
-
-- Instale PostgreSQL.
-- Crie banco `devrank` com usuário `devrank` e senha `devrank123`.
 
 ## Como rodar
 
-### Com Docker Compose (recomendado)
+### 1. Subir o banco com Docker
 
 ```bash
 docker compose up -d
 ```
 
-Acesse em `http://localhost:3000`.
+Se voce alterar usuario ou senha depois que o volume ja foi criado, use:
 
-### Desenvolvimento local
+```bash
+docker compose down -v
+docker compose up -d
+```
 
-1. **Backend**:
-   ```bash
-   cd backend
-   ./mvnw spring-boot:run
-   ```
+### 2. Rodar o backend
 
-2. **Frontend**:
-   ```bash
-   cd frontend
-   npm run dev
-   ```
+No Windows PowerShell:
 
-Acesse o frontend em `http://localhost:3000` e backend em `http://localhost:8080`.
+```powershell
+cd backend
+.\mvnw.cmd spring-boot:run
+```
 
-## Exemplos de Uso
+No Git Bash, Linux ou macOS:
 
-- **Cadastrar ganho**: Preencha o formulário com valor, tipo (ex.: Salário), área (ex.: Backend), nível (ex.: Pleno), região (ex.: Sudeste) e data.
-- **Visualizar estatísticas**: No dashboard, veja médias salariais por área e comparações.
-- **Editar lançamento**: Clique em "Excluir" ao lado do item na lista (atualizar via API).
+```bash
+cd backend
+./mvnw spring-boot:run
+```
 
-## Troubleshooting
+### 3. Rodar o frontend
 
-### 1) "Erro de conexão com banco"
+```powershell
+cd frontend
+npm install
+npm run dev
+```
 
-- Verifique se o PostgreSQL está rodando (via Docker ou local).
-- Confirme as credenciais em `application.properties`.
+## URLs locais
 
-### 2) Frontend não carrega
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:8080`
 
-- Execute `npm install` novamente.
-- Verifique se o backend está rodando em `http://localhost:8080`.
+## Endpoints principais
 
-### 3) Erro de build no backend
+- `POST /auth/register`
+- `POST /auth/login`
+- `GET /income`
+- `POST /income`
+- `PUT /income/{id}`
+- `DELETE /income/{id}`
+- `GET /stats/media-area`
+- `GET /stats/media-nivel`
+- `GET /stats/comparacao`
 
-- Execute `./mvnw clean compile`.
-- Garanta Java 17+ instalado.
+## Observacoes importantes
 
-### 4) Containers não sobem
+- O backend carrega a configuracao do arquivo `.env` na raiz do projeto.
+- As metas financeiras sao uma camada de produto do frontend por enquanto, entao elas nao dependem do banco.
+- O comparativo de mercado e um diferencial do SaaS, mas nao substitui a renda real do usuario.
+- O arquivo `image.png` mostra a identidade visual principal do projeto.
 
-- Execute `docker compose down` e tente novamente.
-- Verifique portas 3000, 8080 e 5432 livres.
+## Troubleshooting rapido
 
-### 5) Dados não aparecem
-
-- Verifique logs do backend para erros de JWT ou autenticação.
-- Certifique-se de estar logado.
-
-## Observações Importantes
-
-- O projeto usa `LocalDate` para datas, evitando problemas de timezone no backend.
-- Dados são armazenados localmente no banco; backup recomendado.
-- Para produção, configure variáveis de ambiente seguras (JWT secret, DB credentials).
-- Contribuições são bem-vindas; abra issues ou PRs.
-
----
-
-Se quiser evoluir o README com screenshots ou GIFs do dashboard, ficaria ainda melhor para novos usuários!
+- Se o cadastro falhar, verifique se o backend esta rodando em `8080` e se o `JWT_SECRET` esta definido.
+- Se o banco nao conectar, confirme o Docker Compose e a senha do Postgres no `.env`.
+- Se o frontend nao abrir, confira se `NEXT_PUBLIC_API_URL` aponta para o backend correto.

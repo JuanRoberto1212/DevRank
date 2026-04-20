@@ -79,7 +79,7 @@ const TOKEN_KEY = "devbank_token";
 const EMAIL_KEY = "devbank_email";
 const USERNAME_KEY = "devbank_username";
 const CARGO_KEY = "devbank_cargo";
-const GOALS_KEY = "devbank_goals";
+const GOALS_KEY_PREFIX = "devbank_goals";
 
 const AREA_OPTIONS = ["frontend", "backend", "data", "cloud"] as const;
 const NIVEL_OPTIONS = ["estagiario", "junior", "pleno", "senior"] as const;
@@ -114,23 +114,85 @@ function toTitleCase(value: string): string {
     .join(" ");
 }
 
+function normalizeStorageEmail(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function getGoalsStorageKey(email: string): string {
+  return `${GOALS_KEY_PREFIX}:${normalizeStorageEmail(email)}`;
+}
+
+function extractApiErrorMessage(data: unknown): string | null {
+  if (!data || typeof data !== "object") {
+    return null;
+  }
+
+  const payload = data as Record<string, unknown>;
+  for (const key of ["message", "detail", "error", "title"]) {
+    const value = payload[key];
+    if (typeof value === "string" && value.trim()) {
+      return value;
+    }
+  }
+
+  const errors = payload.errors;
+  if (Array.isArray(errors)) {
+    const firstMessage = errors.find((item) => typeof item === "string" && item.trim());
+    if (typeof firstMessage === "string") {
+      return firstMessage;
+    }
+  }
+
+  return null;
+}
+
+function formatApiError(response: Response, data: unknown): string {
+  const message = extractApiErrorMessage(data);
+  if (message) {
+    return message;
+  }
+
+  if (response.status === 401) {
+    return "Credenciais invalidas. Confira e-mail e senha.";
+  }
+
+  if (response.status === 403) {
+    return "Acesso negado. Verifique se o backend esta rodando e liberando esta rota.";
+  }
+
+  if (response.status === 404) {
+    return "Recurso nao encontrado.";
+  }
+
+  if (response.status >= 500) {
+    return `Erro interno no servidor (${response.status}).`;
+  }
+
+  if (response.status) {
+    return `Requisicao falhou (${response.status} ${response.statusText}).`;
+  }
+
+  return "Nao foi possivel concluir a requisicao.";
+}
+
 async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      ...init,
+      headers: {
+        "Content-Type": "application/json",
+        ...(init?.headers ?? {}),
+      },
+    });
+  } catch {
+    throw new Error(`Nao foi possivel conectar ao servidor em ${API_URL}.`);
+  }
 
   const data = response.status === 204 ? null : await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message =
-      data && typeof data === "object" && "message" in data
-        ? String(data.message)
-        : "Nao foi possivel concluir a requisicao.";
-    throw new Error(message);
+    throw new Error(formatApiError(response, data));
   }
 
   return data as T;
@@ -171,31 +233,61 @@ export default function Home() {
   const [incomeForm, setIncomeForm] = useState<IncomeFormState>(defaultFormState);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [goalsLoadedKey, setGoalsLoadedKey] = useState("");
   const [goalForm, setGoalForm] = useState(defaultGoalForm);
 
   const cargoPreview = `${toTitleCase(registerArea)} ${toTitleCase(registerNivel)}`;
+  const goalsStorageKey = useMemo(() => {
+    if (!userEmail) {
+      return "";
+    }
+
+    return getGoalsStorageKey(userEmail);
+  }, [userEmail]);
 
   useEffect(() => {
     const storedToken = window.localStorage.getItem(TOKEN_KEY);
     const storedEmail = window.localStorage.getItem(EMAIL_KEY);
     const storedUsername = window.localStorage.getItem(USERNAME_KEY);
     const storedCargo = window.localStorage.getItem(CARGO_KEY);
-    const storedGoals = window.localStorage.getItem(GOALS_KEY);
     if (storedToken) setToken(storedToken);
     if (storedEmail) setUserEmail(storedEmail);
     if (storedUsername) setUserName(storedUsername);
     if (storedCargo) setUserCargo(storedCargo);
-    if (storedGoals) {
-      try {
-        const parsedGoals = JSON.parse(storedGoals) as Goal[];
-        if (Array.isArray(parsedGoals)) {
-          setGoals(parsedGoals);
-        }
-      } catch {
-        window.localStorage.removeItem(GOALS_KEY);
-      }
-    }
   }, []);
+
+  useEffect(() => {
+    if (!token || !goalsStorageKey) {
+      setGoals([]);
+      setGoalsLoadedKey("");
+      return;
+    }
+
+    const storedGoals = window.localStorage.getItem(goalsStorageKey);
+    if (!storedGoals) {
+      setGoals([]);
+      setGoalsLoadedKey(goalsStorageKey);
+      return;
+    }
+
+    try {
+      const parsedGoals = JSON.parse(storedGoals) as Goal[];
+      setGoals(Array.isArray(parsedGoals) ? parsedGoals : []);
+    } catch {
+      window.localStorage.removeItem(goalsStorageKey);
+      setGoals([]);
+    } finally {
+      setGoalsLoadedKey(goalsStorageKey);
+    }
+  }, [token, goalsStorageKey]);
+
+  useEffect(() => {
+    if (!token || !goalsStorageKey || goalsLoadedKey !== goalsStorageKey) {
+      return;
+    }
+
+    window.localStorage.setItem(goalsStorageKey, JSON.stringify(goals));
+  }, [goals, token, goalsLoadedKey, goalsStorageKey]);
 
   const loadDashboard = useCallback(async (authToken: string) => {
     setIsDashboardLoading(true);
@@ -228,10 +320,6 @@ export default function Home() {
 
     void loadDashboard(token);
   }, [token, loadDashboard]);
-
-  useEffect(() => {
-    window.localStorage.setItem(GOALS_KEY, JSON.stringify(goals));
-  }, [goals]);
 
   const resume = useMemo(() => {
     if (!dashboardData) {
@@ -419,6 +507,8 @@ export default function Home() {
       setUserEmail(response.email);
       setUserName(resolvedUsername);
       setUserCargo(resolvedCargo);
+      setGoals([]);
+      setGoalsLoadedKey("");
 
       window.localStorage.setItem(TOKEN_KEY, response.token);
       window.localStorage.setItem(EMAIL_KEY, response.email);
@@ -570,6 +660,9 @@ export default function Home() {
     setUserEmail("");
     setUserName("");
     setUserCargo("");
+    setGoals([]);
+    setGoalsLoadedKey("");
+    setGoalForm(defaultGoalForm);
     setSuccess("");
     setError("");
     setDashboardData(null);
